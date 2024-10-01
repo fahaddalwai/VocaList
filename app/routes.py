@@ -2,6 +2,7 @@ from flask import request, jsonify, session
 from app import app, db, bcrypt
 from app.models import *
 
+
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "Welcome to the To-Do App API!"}), 200
@@ -27,6 +28,7 @@ def register():
 
     return jsonify({"message": "User registered successfully"}), 201
 
+
 # Login route
 @app.route('/login', methods=['POST'])
 def login():
@@ -43,12 +45,12 @@ def login():
     session['user_id'] = user.id
     return jsonify({"message": "Login successful"}), 200
 
+
 # Logout route
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
     return jsonify({"message": "Logged out"}), 200
-
 
 
 # Create a new task
@@ -57,18 +59,39 @@ def create_task():
     data = request.get_json()
     title = data.get('title')
     description = data.get('description')
+    reminder_time = data.get('reminder_time')  # Get reminder_time from the request
 
-    new_task = Task(title=title, description=description, user_id=session['user_id'])
+    new_task = Task(
+        title=title, 
+        description=description, 
+        reminder_time=reminder_time,  # Save reminder_time in the database
+        user_id=session['user_id']
+    )
     db.session.add(new_task)
     db.session.commit()
 
-    return jsonify({"message": "Task created successfully", "task": {"id": new_task.id, "title": new_task.title}}), 201
+    return jsonify({
+        "message": "Task created successfully", 
+        "task": {
+            "id": new_task.id, 
+            "title": new_task.title, 
+            "reminder_time": new_task.reminder_time
+        }
+    }), 201
+
 
 # Get all tasks for the logged-in user
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     tasks = Task.query.filter_by(user_id=session['user_id']).all()
-    return jsonify([{"id": task.id, "title": task.title, "description": task.description, "completed": task.completed} for task in tasks]), 200
+    return jsonify([{
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "completed": task.completed,
+        "reminder_time": task.reminder_time
+    } for task in tasks]), 200
+
 
 # Update a task
 @app.route('/tasks/<int:task_id>', methods=['PUT'])
@@ -82,9 +105,11 @@ def update_task(task_id):
     task.title = data.get('title', task.title)
     task.description = data.get('description', task.description)
     task.completed = data.get('completed', task.completed)
+    task.reminder_time = data.get('reminder_time', task.reminder_time)  # Update reminder_time
 
     db.session.commit()
     return jsonify({"message": "Task updated successfully"}), 200
+
 
 # Delete a task
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
@@ -99,7 +124,6 @@ def delete_task(task_id):
     return jsonify({"message": "Task deleted successfully"}), 200
 
 
-
 # Get a task by ID for the logged-in user
 @app.route('/tasks/<int:task_id>', methods=['GET'])
 def get_task_for_user(task_id):
@@ -112,7 +136,8 @@ def get_task_for_user(task_id):
         "id": task.id,
         "title": task.title,
         "description": task.description,
-        "completed": task.completed
+        "completed": task.completed,
+        "reminder_time": task.reminder_time
     }
     
     return jsonify(task_data), 200
