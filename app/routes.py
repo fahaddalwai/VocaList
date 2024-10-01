@@ -97,3 +97,22 @@ def delete_task(task_id):
     db.session.delete(task)
     db.session.commit()
     return jsonify({"message": "Task deleted successfully"}), 200
+
+
+
+# Get a task by ID for the logged-in user
+@app.route('/tasks/<int:task_id>', methods=['GET'])
+def get_task_for_user(task_id):
+    task = Task.query.filter_by(id=task_id, user_id=session['user_id']).first()
+    
+    if task is None:
+        return jsonify({"message": "Task not found or you do not have permission to view this task"}), 404
+    
+    task_data = {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "completed": task.completed
+    }
+    
+    return jsonify(task_data), 200
