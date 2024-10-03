@@ -1,7 +1,11 @@
 from flask import request, jsonify, session
 from app import app, db, bcrypt
 from app.models import *
-
+import speech_recognition as sr
+from flask import request, jsonify, session
+from app import *
+from .llm_utils import process_speech_to_task
+from app.models import Task
 
 @app.route('/', methods=['GET'])
 def home():
@@ -141,3 +145,100 @@ def get_task_for_user(task_id):
     }
     
     return jsonify(task_data), 200
+
+
+
+@app.route('/create-task-from-speech', methods=['POST'])
+def create_task_from_speech():
+    recognizer = sr.Recognizer()
+
+    # Check if an audio file is provided in the request
+    if 'audio' not in request.files:
+        return jsonify({"error": "Audio file not provided"}), 400
+    
+    audio_file = request.files['audio']
+
+    # Convert speech to text
+    with sr.AudioFile(audio_file) as source:
+        audio_data = recognizer.record(source)
+        try:
+            speech_text = recognizer.recognize_google(audio_data)  # Or any speech-to-text service
+            print(f"Speech Text: {speech_text}")  # Log the speech-to-text output
+        except sr.UnknownValueError:
+            return jsonify({"error": "Speech could not be understood"}), 400
+        except sr.RequestError:
+            return jsonify({"error": "Speech service is not available"}), 500
+
+    # Use the LLM to extract task details
+    task_details = process_speech_to_task(speech_text)
+
+    if not task_details['title'] and task_details['action_type'] != 'delete':
+        return jsonify({"error": "Could not extract task title"}), 400
+
+    # Convert reminder time if available
+    reminder_time = None
+    if task_details['reminder_time']:
+        print(task_details['reminder_time'])
+        try:
+            reminder_time = datetime.strptime(task_details['reminder_time'], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            return jsonify({"error": "Invalid reminder time format, expected 'YYYY-MM-DD HH:MM:SS'"}), 400
+
+    action_type = task_details['action_type'].lower()
+
+    # Handle different action types
+    if action_type == 'add':
+        # Create a new task
+        new_task = Task(
+            title=task_details['title'],
+            description=task_details.get('description'),
+            reminder_time=reminder_time,
+            user_id=session['user_id']
+        )
+        db.session.add(new_task)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Task created successfully",
+            "task": {
+                "id": new_task.id,
+                "title": new_task.title,
+                "description": new_task.description,
+                "reminder_time": new_task.reminder_time
+            }
+        }), 201
+
+    elif action_type == 'update':
+        # Update an existing task (based on details like title, description)
+        task = Task.query.filter_by(user_id=session['user_id'], title=task_details['title']).first()
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        task.title = task_details.get('title', task.title)
+        task.description = task_details.get('description', task.description)
+        task.reminder_time = reminder_time if reminder_time else task.reminder_time
+
+        db.session.commit()
+        return jsonify({"message": "Task updated successfully"}), 200
+
+    elif action_type == 'delete':
+        # Delete task based on provided details (e.g., title, description)
+        task_title = task_details.get('title')
+        task_description = task_details.get('description')
+
+        if task_title:
+            task = Task.query.filter_by(user_id=session['user_id'], title=task_title).first()
+        elif task_description:
+            task = Task.query.filter_by(user_id=session['user_id'], description=task_description).first()
+        else:
+            return jsonify({"error": "No valid details provided to identify the task"}), 400
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({"message": "Task deleted successfully"}), 200
+
+    else:
+        return jsonify({"error": "Invalid action type"}), 400
