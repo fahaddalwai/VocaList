@@ -1,0 +1,8 @@
+Flask==2.3.3
+Flask-Bcrypt==1.0.1
+Flask-SQLAlchemy==3.0.5
+Cohere==4.9.0
+SpeechRecognition==3.8.1
+SQLAlchemy==2.0.20
+PyMySQL==1.1.0
+python-dotenv==1.0.0
