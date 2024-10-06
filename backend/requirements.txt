@@ -6,3 +6,4 @@ SpeechRecognition==3.8.1
 SQLAlchemy==2.0.20
 PyMySQL==1.1.0
 python-dotenv==1.0.0
+flask-cors==3.0.10
