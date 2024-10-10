@@ -1,17 +1,40 @@
 .dashboard-container {
-    display: flex;
-    justify-content: space-between;
-    padding: 20px;
-  }
-  
-  .calendar-section {
-    width: 70%;
-  }
-  
-  .chat-section {
-    width: 30%;
-    background-color: #f1f1f1;
-    padding: 20px;
-    height: 500px;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.calendar-section {
+  width: 800px;
+}
+
+.chat-section {
+  width: 500px;
+  background-color: #FEF6E4;
+  padding: 20px;
+  height: 600px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-left: 100px;
+}
+
+/* Styling for Chatbot inside the chat section */
+.chat-section button {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: gray;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.chat-section button:hover {
+  background-color: #5a6268;
+}
+.rbc-event{
+  background-color:#8B8378;
+}

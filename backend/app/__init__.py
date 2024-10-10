@@ -7,7 +7,7 @@ app = Flask(__name__, static_folder='static')
 CORS(app, supports_credentials=True)
 
 # MySQL Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://fahad:fahad159@localhost/todo_app"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:Divya%40204@localhost/todo_app"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Secret key for JWT encoding/decoding

@@ -3,24 +3,27 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import moment from 'moment';
 import ChatBot from './Chatbot';
+import '../Styles/Dashboard.css'; // Importing the CSS file
 
 // Setup localizer for the calendar
 const localizer = momentLocalizer(moment);
 
 // Function to convert the timestamp to 'YYYY-MM-DDTHH:MM:SS' format
+// Function to convert the timestamp to 'YYYY-MM-DDTHH:MM:SS' format in local CST timezone
 const convertDate = (dateString) => {
-  const date = new Date(dateString); // Convert the date string to a Date object
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth is zero-based
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+  const date = moment.parseZone(dateString); // Parse with the timezone information
+  
+  const year = date.year();
+  const month = String(date.month() + 1).padStart(2, '0'); // month is zero-based
+  const day = String(date.date()).padStart(2, '0');
+  const hours = String(date.hours()).padStart(2, '0');
+  const minutes = String(date.minutes()).padStart(2, '0');
+  const seconds = String(date.seconds()).padStart(2, '0');
 
   // Format to 'YYYY-MM-DDTHH:MM:SS'
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
+
 
 const Dashboard = () => {
   const [events, setEvents] = useState([]);
@@ -65,16 +68,20 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div style={{ height: '100vh' }}>
-      <h2>Dashboard Calendar</h2>
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500, margin: '50px', width: '50%' }}
-      />
-      <ChatBot />
+    <div className="dashboard-container">
+      <div className="calendar-section">
+        {/* <h2>Dashboard Calendar</h2> */}
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 500, margin: '50px' }}
+        />
+      </div>
+      <div className="chat-section">
+        <ChatBot />
+      </div>
     </div>
   );
 };
