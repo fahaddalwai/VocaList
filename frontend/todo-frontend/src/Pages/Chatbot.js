@@ -110,7 +110,12 @@ const ChatBot = () => {
             } else {
                 setMessage('Error creating task from speech.');
                 let messageArr = messageList;
-                messageArr.push({ 'message': "I didn't get that." });
+                if(transcript === ''){
+                    messageArr.push({ 'message': "I didn't hear anything." });
+                }
+                else{
+                    messageArr.push({ 'message': "I didn't get that." });
+                }
                 setMessageList(messageArr);
             }
         } catch (error) {
