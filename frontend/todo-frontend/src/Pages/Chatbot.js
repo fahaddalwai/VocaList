@@ -26,7 +26,12 @@ const ChatBot = () => {
             mediaRecorderRef.current.stop();
             recognition.stop(); // Stop recognition when recording stops
             let messageArr = messageList;
-            messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
+            if(transcript === ''){
+                messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
+            }
+            else{
+                messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
+            }
             setMessageList([...messageArr]);
             setTranscript(''); // Clear transcript after processing
         } else {
