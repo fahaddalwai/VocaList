@@ -1,0 +1,132 @@
+/* Basic Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body styling to create beige background */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: floralwhite; /* Beige background */
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  font-family: fangsong;
+}
+
+/* Auth Container */
+.auth-container {
+  width: 400px;
+  margin: 50px 530px;
+  padding: 30px;
+  background-color: rgba(255, 255, 255, 0.85); /* Slightly transparent white */
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header Styling */
+.auth-container h2 {
+  font-size: 2rem;
+  color: #8b7d7b; /* Warm neutral grey */
+  margin-bottom: 25px;
+}
+
+/* Form Styling */
+.auth-container form div {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.auth-container form label {
+  font-size: 1.1rem;
+  color: #6e5f5b; /* Taupe for labels */
+  display: block;
+  margin-bottom: 8px;
+}
+
+.auth-container form input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #d3c4b8; /* Light taupe border */
+  border-radius: 12px;
+  box-shadow: inset 0 2px 4px rgba(211, 196, 184, 0.2); /* Soft shadow */
+  font-size: 1rem;
+  color: #333;
+  height: 40px;
+}
+
+.auth-container form input:focus {
+  border-color: #8b7d7b; /* Warm neutral grey outline */
+  outline: none;
+}
+
+.auth-container form button {
+  width: 100%;
+  background-color: #b29983; /* Neutral taupe button */
+  color: white;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background-color 0.3s ease;
+  height: 40px;
+}
+
+.auth-container form button:hover {
+  background-color: #a18872; /* Darker taupe on hover */
+}
+
+/* Links and Extra Options */
+.auth-container p {
+  margin-top: 15px;
+  font-size: 1rem;
+  color: #6e5f5b; /* Warm neutral taupe */
+}
+
+.auth-container p a {
+  color: #8b7d7b; /* Warm neutral grey for links */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-container p a:hover {
+  text-decoration: underline;
+}
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: -25px;
+  left: -20px;
+  width: 100px;
+  height: 60px;
+  background: url('https://img.icons8.com/?size=100&id=114426&format=png&color=000000') no-repeat center center / contain;
+}
+
+/* .auth-container::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  right: -30px;
+  width: 80px;
+  height: 40px;
+  background: url(https://img.icons8.com/?size=100&id=D9x0PpvvT1AL&format=png&color=000000) no-repeat center center / contain;
+} */
+
+/* Pink Panther Image at Bottom Left */
+body::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  right: 10px;
+  width: 200px;
+  height: 150px;
+  background: url('../Images/panther-bw.png') no-repeat center center;
+  background-size: contain;
+}
