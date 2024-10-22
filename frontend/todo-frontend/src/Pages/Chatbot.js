@@ -26,15 +26,16 @@ const ChatBot = () => {
             mediaRecorderRef.current.stop();
             recognition.stop(); // Stop recognition when recording stops
             let messageArr = messageList;
-            if(transcript === ''){
+            if (transcript === '') {
                 messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
             }
-            else{
+            else {
                 messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
             }
             setMessageList([...messageArr]);
             setTranscript(''); // Clear transcript after processing
         } else {
+            setTranscript('');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorderRef.current = new MediaRecorder(stream);
@@ -63,7 +64,7 @@ const ChatBot = () => {
         }
     };
 
-    // Function to handle the recognized speech in real-time
+    //Function to handle the recognized speech in real-time
     recognition.onresult = (event) => {
         const speechToText = Array.from(event.results)
             .map((result) => result[0].transcript)
@@ -110,12 +111,7 @@ const ChatBot = () => {
             } else {
                 setMessage('Error creating task from speech.');
                 let messageArr = messageList;
-                if(transcript === ''){
-                    messageArr.push({ 'message': "I didn't hear anything." });
-                }
-                else{
-                    messageArr.push({ 'message': "I didn't get that." });
-                }
+                messageArr.push({ 'message': "I didn't get that." });
                 setMessageList(messageArr);
             }
         } catch (error) {
@@ -176,7 +172,7 @@ const ChatBot = () => {
                 const errorText = await response.text();
                 setMessage(`I couldn't ${action_type.toLowerCase()} the task: ${errorText}`);
                 let messageArr = messageList;
-                messageArr.push({ 'message': `Sorry, I couldn't ${action_type.toLowerCase()} the task :(`});
+                messageArr.push({ 'message': `Sorry, I couldn't ${action_type.toLowerCase()} the task :(` });
                 setMessageList(messageArr);
             }
         } catch (error) {
@@ -208,7 +204,7 @@ const ChatBot = () => {
                 )}
             </div>
 
-            <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null ? {pointerEvents:"none",background:"lightgray"}:{}} onClick={toggleRecording} >
+            <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null ? { pointerEvents: "none", background: "lightgray" } : {}} onClick={toggleRecording} >
                 <FontAwesomeIcon icon={faMicrophone} />
             </button>
         </div>
