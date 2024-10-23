@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import '../Styles/Chatbot.css'; // Assuming you have a CSS file for chatbot styling
@@ -11,6 +11,7 @@ const ChatBot = () => {
     const [confirmation, setConfirmation] = useState(null);
     const [transcript, setTranscript] = useState(''); // Holds recognized speech in real-time
     const mediaRecorderRef = useRef(null);
+    const endOfMessagesRef = useRef(null); // Ref for scrolling to the last message
 
     // Web Speech API - Speech Recognition setup
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -64,7 +65,7 @@ const ChatBot = () => {
         }
     };
 
-    //Function to handle the recognized speech in real-time
+    // Function to handle the recognized speech in real-time
     recognition.onresult = (event) => {
         const speechToText = Array.from(event.results)
             .map((result) => result[0].transcript)
@@ -98,6 +99,15 @@ const ChatBot = () => {
             if (response.ok) {
                 const result = await response.json();
                 const { action_type, title, description, reminder_time } = result;
+
+                // Check if all required fields are present
+                if (!action_type || !title || !reminder_time) {
+                    setMessage('Incomplete details. Please record your task again.');
+                    let messageArr = messageList;
+                    messageArr.push({ 'message': 'Incomplete details. Please record your task again.' });
+                    setMessageList(messageArr);
+                    return; // Exit early if details are incomplete
+                }
 
                 setConfirmation({ action_type, title, description, reminder_time }); // Set task confirmation
                 const confirmationMessage = `Do you want to ${action_type.toLowerCase()} "${title}" ${action_type.toLowerCase() === 'delete' ? 'from' : 'to'
@@ -184,6 +194,13 @@ const ChatBot = () => {
         }
     };
 
+    // Scroll to the bottom when messageList changes
+    useEffect(() => {
+        if (endOfMessagesRef.current) {
+            endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messageList]);
+
     return (
         <div className="chatbot-container">
             <div className="chatbox">
@@ -202,6 +219,7 @@ const ChatBot = () => {
                         <button onClick={handleNo}>No, Cancel</button>
                     </div>
                 )}
+                <div ref={endOfMessagesRef} /> {/* This div will act as a scroll target */}
             </div>
 
             <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null ? { pointerEvents: "none", background: "lightgray" } : {}} onClick={toggleRecording} >

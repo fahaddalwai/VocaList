@@ -9,7 +9,7 @@ def process_speech_to_task(speech_text):
     print(f"Speech-to-text output: {speech_text}")
     today_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    prompt = f"""The date today is {today_date}. Extract the action type (add, update, delete), title, description, and reminder time (in the format: 2024-10-01 17:49:35) from this speech: '{speech_text}' in this format:
+    prompt = f"""The date today is {today_date}. If you do not have all the details provided to you then return that part as blank. Extract the action type (add, update, delete), title, description, and reminder time (in the format: 2024-10-01 17:49:35) from this speech: '{speech_text}' in this format:
         Action Type: Add
         Title: Buy Groceries
         Description: Buy milk, eggs, and bread.
