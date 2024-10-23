@@ -17,14 +17,24 @@ const ChatBot = ({ onTaskAdded }) => {
     // Web Speech API - Speech Recognition setup
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; // Automatically stop after the user stops speaking
+    recognition.continuous = true; // To keep recognizing even during pauses
     recognition.interimResults = true; // To show partial results
     recognition.lang = 'en-US'; // Set language to English
 
     // Function to start and stop recording and recognize speech
     const toggleRecording = async () => {
         if (isRecording) {
-            stopRecording();
+            setIsRecording(false);
+            mediaRecorderRef.current.stop();
+            recognition.stop(); // Stop recognition when recording stops
+            let messageArr = messageList;
+            if (transcript === '') {
+                messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
+            } else {
+                messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
+            }
+            setMessageList([...messageArr]);
+            setTranscript(''); // Clear transcript after processing
         } else {
             setTranscript('');
             try {
@@ -56,24 +66,12 @@ const ChatBot = ({ onTaskAdded }) => {
         }
     };
 
-    // Stop recording when recognition stops (user stops speaking)
-    const stopRecording = () => {
-        setIsRecording(false);
-        mediaRecorderRef.current?.stop();
-        recognition.stop(); // Stop recognition when recording stops
-    };
-
     // Function to handle the recognized speech in real-time
     recognition.onresult = (event) => {
         const speechToText = Array.from(event.results)
             .map((result) => result[0].transcript)
             .join('');
         setTranscript(speechToText); // Show real-time speech recognition
-    };
-
-    // Stop recording when the user stops speaking
-    recognition.onend = () => {
-        stopRecording(); // Stop the recording and finalize the audio file
     };
 
     const submitAudio = async (audioBlob) => {
@@ -199,7 +197,7 @@ const ChatBot = ({ onTaskAdded }) => {
                 let messageArr = messageList;
                 if (action_type === 'Add') {
                     messageArr.push({ 'message': `Task ${action_type}ed successfully` });
-                    setTimeout(() => { onTaskAdded({ title, reminder_time }) }, 2500);
+                    setTimeout(()=>{onTaskAdded({ title, reminder_time })},2500);
                 } else {
                     messageArr.push({ 'message': `Task ${action_type}d successfully` });
                 }
@@ -225,7 +223,7 @@ const ChatBot = ({ onTaskAdded }) => {
         if (endOfMessagesRef.current) {
             endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [isRecording, messageList, transcript]);
+    }, [isRecording,messageList,transcript,confirmation,loading]);
 
     return (
         <div className="chatbot-container">
