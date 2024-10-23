@@ -8,6 +8,7 @@ import speech_recognition as sr
 import subprocess
 import os
 from .llm_utils import process_speech_to_task
+from sqlalchemy import func
 
 
 
@@ -171,7 +172,9 @@ def delete_task_by_title():
     if user_id is None:
         return jsonify({"message": "Token is invalid!"}), 403
 
-    task = Task.query.filter_by(title=title, user_id=user_id).first()
+    # Case-insensitive title search using ilike
+    task = Task.query.filter(func.lower(Task.title) == func.lower(title), Task.user_id == user_id).first()
+
     if task is None:
         return jsonify({"message": "Task not found or you do not have permission to delete this task"}), 404
 
@@ -195,7 +198,9 @@ def update_task_by_title():
     if user_id is None:
         return jsonify({"message": "Token is invalid!"}), 403
 
-    task = Task.query.filter_by(title=title, user_id=user_id).first()
+    # Case-insensitive title search using ilike
+    task = Task.query.filter(func.lower(Task.title) == func.lower(title), Task.user_id == user_id).first()
+    
     if task is None:
         return jsonify({"message": "Task not found or you do not have permission to update this task"}), 404
 

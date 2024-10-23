@@ -1,5 +1,5 @@
 import cohere
-
+from datetime import datetime
 # Initialize the Cohere client
 co = cohere.Client('AnPnuFiUEcnWT4POFYHq3S2UOKDbGZv03E82yVhZ')
 
@@ -7,8 +7,9 @@ co = cohere.Client('AnPnuFiUEcnWT4POFYHq3S2UOKDbGZv03E82yVhZ')
 def process_speech_to_task(speech_text):
     # Log the speech text
     print(f"Speech-to-text output: {speech_text}")
-    
-    prompt = f"""Extract the action type (add, update, delete), title, description, and reminder time (in the format: 2024-10-01 17:49:35) from this speech: '{speech_text}' in this format:
+    today_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    prompt = f"""The date today is {today_date}. Extract the action type (add, update, delete), title, description, and reminder time (in the format: 2024-10-01 17:49:35) from this speech: '{speech_text}' in this format:
         Action Type: Add
         Title: Buy Groceries
         Description: Buy milk, eggs, and bread.
@@ -18,7 +19,7 @@ def process_speech_to_task(speech_text):
     response = co.generate(
         model='command-xlarge-nightly',  # Use your desired Cohere model
         prompt=prompt,
-        max_tokens=150,
+        max_tokens=150, 
         temperature=0.7
     )
 
