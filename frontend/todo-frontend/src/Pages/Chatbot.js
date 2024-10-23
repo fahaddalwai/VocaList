@@ -220,10 +220,12 @@ const ChatBot = ({ onTaskAdded }) => {
 
     // Scroll to the bottom when messageList changes
     useEffect(() => {
+        console.log("1");
         if (endOfMessagesRef.current) {
+            console.log("hey")
             endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [isRecording,messageList,transcript,confirmation,loading]);
+    }, [isRecording,messageList.length,transcript,confirmation,loading,message]);
 
     return (
         <div className="chatbot-container">
