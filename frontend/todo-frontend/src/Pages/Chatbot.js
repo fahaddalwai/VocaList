@@ -99,22 +99,25 @@ const ChatBot = () => {
             if (response.ok) {
                 const result = await response.json();
                 const { action_type, title, description, reminder_time } = result;
-
-                // Check if all required fields are present
-                if (!action_type || !title || !reminder_time) {
+            
+                // Check if all required fields are present only for 'Add' action type
+                if (action_type === 'Add' && (!action_type || !title || !reminder_time)) {
                     setMessage('Incomplete details. Please record your task again.');
                     let messageArr = messageList;
                     messageArr.push({ 'message': 'Incomplete details. Please record your task again.' });
                     setMessageList(messageArr);
                     return; // Exit early if details are incomplete
                 }
-
+            
                 setConfirmation({ action_type, title, description, reminder_time }); // Set task confirmation
-                const confirmationMessage = `Do you want to ${action_type.toLowerCase()} "${title}" ${action_type.toLowerCase() === 'delete' ? 'from' : 'to'
-                    } your list for ${new Date(reminder_time).toLocaleDateString()} at ${new Date(reminder_time).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}?`;
+                
+                const confirmationMessage = action_type.toLowerCase() === 'delete'
+    ? `Do you want to ${action_type.toLowerCase()} "${title}" from your list?`
+    : `Do you want to ${action_type.toLowerCase()} "${title}" to your list for ${new Date(reminder_time).toLocaleDateString()} at ${new Date(reminder_time).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    })}?`;
+            
                 let messageArr = messageList;
                 messageArr.push({ 'message': confirmationMessage });
                 setMessageList(messageArr);

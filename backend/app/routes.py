@@ -178,9 +178,20 @@ def delete_task_by_title():
     if task is None:
         return jsonify({"message": "Task not found or you do not have permission to delete this task"}), 404
 
+    # Prepare the response with task details before deletion
+    task_details = {
+        "action_type": "Delete",  # Specify the action type for clarity
+        "title": task.title,
+        "description": task.description,
+        "reminder_time": task.reminder_time.isoformat() if task.reminder_time else None  # Ensure reminder_time is in ISO format
+    }
+
+    # Delete the task
     db.session.delete(task)
     db.session.commit()
-    return jsonify({"message": "Task deleted successfully"}), 200
+
+    print(task_details)
+    return jsonify(task_details), 200  # Directly return task details
 
 @app.route('/tasks/update-by-title', methods=['PUT'])
 def update_task_by_title():
