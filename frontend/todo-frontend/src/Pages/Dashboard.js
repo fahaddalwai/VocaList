@@ -8,11 +8,10 @@ import '../Styles/Dashboard.css'; // Importing the CSS file
 // Setup localizer for the calendar
 const localizer = momentLocalizer(moment);
 
-// Function to convert the timestamp to 'YYYY-MM-DDTHH:MM:SS' format
 // Function to convert the timestamp to 'YYYY-MM-DDTHH:MM:SS' format in local CST timezone
 const convertDate = (dateString) => {
   const date = moment.parseZone(dateString); // Parse with the timezone information
-  
+
   const year = date.year();
   const month = String(date.month() + 1).padStart(2, '0'); // month is zero-based
   const day = String(date.date()).padStart(2, '0');
@@ -24,9 +23,9 @@ const convertDate = (dateString) => {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
 
-
 const Dashboard = () => {
   const [events, setEvents] = useState([]);
+  const [currentDate, setCurrentDate] = useState(new Date()); // Track the current calendar view date
 
   // Fetch tasks from API
   const fetchTasks = async () => {
@@ -53,6 +52,7 @@ const Dashboard = () => {
       });
 
       setEvents(formattedEvents);
+
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -67,20 +67,27 @@ const Dashboard = () => {
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, []);
 
+  // Function to handle new task addition and navigate the calendar to the respective month
+  const handleTaskAddition = (newTask) => {
+    const newTaskDate = new Date(newTask.reminder_time);
+    setCurrentDate(newTaskDate); // Set the calendar to the month of the new task
+  };
+
   return (
     <div className="dashboard-container">
       <div className="calendar-section">
-        {/* <h2>Dashboard Calendar</h2> */}
         <Calendar
           localizer={localizer}
           events={events}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: 500, margin: '50px' }}
+          style={{ height: 520, margin: '50px', width: 750 }}
+          date={currentDate}  // Control the displayed date
+          onNavigate={(newDate) => setCurrentDate(newDate)}  // Update the state when the user navigates
         />
       </div>
       <div className="chat-section">
-        <ChatBot />
+        <ChatBot onTaskAdded={handleTaskAddition} /> {/* Pass the handler to the ChatBot */}
       </div>
     </div>
   );

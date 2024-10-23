@@ -10,10 +10,10 @@
 
 .chat-section {
   width: 500px;
-  background-color: #FEF6E4;
-  padding: 20px;
+  /* background-color: #FEF6E4; */
+  padding: 30px 20px 20px 20px;
   height: 600px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); */
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -38,3 +38,20 @@
 .rbc-event{
   background-color:#8B8378;
 }
+.calendar-wrapper {
+  position: relative; /* To allow the overlay to be positioned on top */
+}
+
+.overlay-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.4); /* A white transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100; /* Ensure it's on top */
+}
+
