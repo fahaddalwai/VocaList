@@ -1,16 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import '../Styles/Chatbot.css'; // Assuming you have a CSS file for chatbot styling
 
-const ChatBot = () => {
+const ChatBot = ({ onTaskAdded }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [audioBlob, setAudioBlob] = useState(null);
     const [message, setMessage] = useState('');
     const [messageList, setMessageList] = useState([]);
     const [confirmation, setConfirmation] = useState(null);
     const [transcript, setTranscript] = useState(''); // Holds recognized speech in real-time
+    const [loading, setLoading] = useState(false); // Loading state for system typing
     const mediaRecorderRef = useRef(null);
+    const endOfMessagesRef = useRef(null); // Ref for scrolling to the last message
 
     // Web Speech API - Speech Recognition setup
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -26,16 +28,17 @@ const ChatBot = () => {
             mediaRecorderRef.current.stop();
             recognition.stop(); // Stop recognition when recording stops
             let messageArr = messageList;
-            if(transcript === ''){
+            if (transcript === '') {
                 messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
-            }
-            else{
+            } else {
                 messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
             }
             setMessageList([...messageArr]);
             setTranscript(''); // Clear transcript after processing
         } else {
+            setTranscript('');
             try {
+                setIsRecording(true);
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorderRef.current = new MediaRecorder(stream);
                 const audioChunks = [];
@@ -85,6 +88,9 @@ const ChatBot = () => {
 
         const token = localStorage.getItem('token'); // Retrieve token from local storage
 
+        // Show loading dots while waiting for the response
+        setLoading(true);
+
         try {
             const response = await fetch('http://127.0.0.1:5000/create-task-from-speech', {
                 method: 'POST',
@@ -98,33 +104,56 @@ const ChatBot = () => {
                 const result = await response.json();
                 const { action_type, title, description, reminder_time } = result;
 
+                // Stop loading after receiving response
+                setLoading(false);
+
+                // Check if all required fields are present only for 'Add' action type
+                if (action_type === 'Add' && (!action_type || !title || !reminder_time)) {
+                    setMessage('Incomplete details. Please record your task again.');
+                    let messageArr = messageList;
+                    messageArr.push({ 'message': 'Incomplete details. Please record your task again.' });
+                    setMessageList(messageArr);
+                    return; // Exit early if details are incomplete
+                }
+
                 setConfirmation({ action_type, title, description, reminder_time }); // Set task confirmation
-                const confirmationMessage = `Do you want to ${action_type.toLowerCase()} "${title}" ${action_type.toLowerCase() === 'delete' ? 'from' : 'to'
-                    } your list for ${new Date(reminder_time).toLocaleDateString()} at ${new Date(reminder_time).toLocaleTimeString([], {
+
+                const confirmationMessage = action_type.toLowerCase() === 'delete'
+                    ? `Do you want to ${action_type.toLowerCase()} "${title}" from your list?`
+                    : `Do you want to ${action_type.toLowerCase()} "${title}" to your list for ${new Date(reminder_time).toLocaleDateString()} at ${new Date(reminder_time).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
                     })}?`;
+
                 let messageArr = messageList;
                 messageArr.push({ 'message': confirmationMessage });
                 setMessageList(messageArr);
             } else {
+                setLoading(false);
                 setMessage('Error creating task from speech.');
                 let messageArr = messageList;
-                if(transcript === ''){
-                    messageArr.push({ 'message': "I didn't hear anything." });
-                }
-                else{
-                    messageArr.push({ 'message': "I didn't get that." });
-                }
+                messageArr.push({ 'message': "I didn't get that." });
                 setMessageList(messageArr);
             }
         } catch (error) {
+            setLoading(false);
             console.error('Error submitting audio:', error);
             setMessage('An error occurred while submitting the audio.');
             let messageArr = messageList;
             messageArr.push({ 'message': 'An error occurred while submitting the audio.' });
             setMessageList(messageArr);
         }
+    };
+
+    // Function to handle system response delay (loading dots)
+    const LoadingDots = () => {
+        return (
+            <div className="loading-dots">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+            </div>
+        );
     };
 
     const handleNo = () => {
@@ -168,6 +197,7 @@ const ChatBot = () => {
                 let messageArr = messageList;
                 if (action_type === 'Add') {
                     messageArr.push({ 'message': `Task ${action_type}ed successfully` });
+                    setTimeout(()=>{onTaskAdded({ title, reminder_time })},2500);
                 } else {
                     messageArr.push({ 'message': `Task ${action_type}d successfully` });
                 }
@@ -176,7 +206,7 @@ const ChatBot = () => {
                 const errorText = await response.text();
                 setMessage(`I couldn't ${action_type.toLowerCase()} the task: ${errorText}`);
                 let messageArr = messageList;
-                messageArr.push({ 'message': `Sorry, I couldn't ${action_type.toLowerCase()} the task :(`});
+                messageArr.push({ 'message': `Sorry, I couldn't ${action_type.toLowerCase()} the task :(` });
                 setMessageList(messageArr);
             }
         } catch (error) {
@@ -188,17 +218,31 @@ const ChatBot = () => {
         }
     };
 
+    // Scroll to the bottom when messageList changes
+    useEffect(() => {
+        console.log("1");
+        if (endOfMessagesRef.current) {
+            console.log("hey")
+            endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [isRecording,messageList.length,transcript,confirmation,loading,message]);
+
     return (
         <div className="chatbot-container">
-            <div className="chatbox">
-                {messageList.length === 0 ? <p style={{ margin: "130px 35px 100px", color: "#8B8378" }}>Add/Reschedule/Delete a reminder</p> : <></>}
+            <div className="chatbox" >
+                {messageList.length === 0 && transcript === '' ? <p style={{ margin: "50% 0% 20% 23%", color: "#8B8378" }}>Add/Reschedule/Delete an event</p> : <></>}
                 {messageList.map((msg, index) => (
-                    <div key={index} className={`message ${msg.user ? msg.audio ? 'user-message audio-message ' : 'user-message' : 'system-message'}`}>
+                    <div key={index} className={`message ${msg.user ? msg.audio && msg.message === "Audio captured" ? 'user-message audio-message ' : 'user-message' : 'system-message'}`}>
                         {msg.message}
                     </div>
                 ))}
                 {transcript && isRecording && ( // Display recognized speech in real-time
                     <p className="message user-message"> {transcript}</p>
+                )}
+                {loading && (
+                    <div className="message system-message">
+                        <LoadingDots /> {/* Show loading dots when system is processing */}
+                    </div>
                 )}
                 {confirmation && (
                     <div className="confirmation-box">
@@ -206,9 +250,10 @@ const ChatBot = () => {
                         <button onClick={handleNo}>No, Cancel</button>
                     </div>
                 )}
+                <div ref={endOfMessagesRef} /> {/* This div will act as a scroll target */}
             </div>
 
-            <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null ? {pointerEvents:"none",background:"lightgray"}:{}} onClick={toggleRecording} >
+            <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null ? { pointerEvents: "none", background: "lightgray" } : {}} onClick={toggleRecording} >
                 <FontAwesomeIcon icon={faMicrophone} />
             </button>
         </div>

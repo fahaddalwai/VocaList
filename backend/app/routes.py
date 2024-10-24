@@ -8,6 +8,7 @@ import speech_recognition as sr
 import subprocess
 import os
 from .llm_utils import process_speech_to_task
+from sqlalchemy import func
 
 
 
@@ -171,13 +172,26 @@ def delete_task_by_title():
     if user_id is None:
         return jsonify({"message": "Token is invalid!"}), 403
 
-    task = Task.query.filter_by(title=title, user_id=user_id).first()
+    # Case-insensitive title search using ilike
+    task = Task.query.filter(func.lower(Task.title) == func.lower(title), Task.user_id == user_id).first()
+
     if task is None:
         return jsonify({"message": "Task not found or you do not have permission to delete this task"}), 404
 
+    # Prepare the response with task details before deletion
+    task_details = {
+        "action_type": "Delete",  # Specify the action type for clarity
+        "title": task.title,
+        "description": task.description,
+        "reminder_time": task.reminder_time.isoformat() if task.reminder_time else None  # Ensure reminder_time is in ISO format
+    }
+
+    # Delete the task
     db.session.delete(task)
     db.session.commit()
-    return jsonify({"message": "Task deleted successfully"}), 200
+
+    print(task_details)
+    return jsonify(task_details), 200  # Directly return task details
 
 @app.route('/tasks/update-by-title', methods=['PUT'])
 def update_task_by_title():
@@ -195,7 +209,9 @@ def update_task_by_title():
     if user_id is None:
         return jsonify({"message": "Token is invalid!"}), 403
 
-    task = Task.query.filter_by(title=title, user_id=user_id).first()
+    # Case-insensitive title search using ilike
+    task = Task.query.filter(func.lower(Task.title) == func.lower(title), Task.user_id == user_id).first()
+    
     if task is None:
         return jsonify({"message": "Task not found or you do not have permission to update this task"}), 404
 

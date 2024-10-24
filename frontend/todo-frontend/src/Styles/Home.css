@@ -1,7 +1,8 @@
 .home-container {
     text-align: center;
     padding: 50px;
-    margin-left: 320px;
+    margin-left: 35%;
+    width:100%;
   }
   
   .home-container h1 {
