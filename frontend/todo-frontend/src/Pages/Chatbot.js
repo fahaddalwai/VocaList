@@ -13,30 +13,38 @@ const ChatBot = ({ onTaskAdded }) => {
     const [loading, setLoading] = useState(false); // Loading state for system typing
     const mediaRecorderRef = useRef(null);
     const endOfMessagesRef = useRef(null); // Ref for scrolling to the last message
+    let silenceTimeout; // Used to track silence duration
+    const isStoppedRef = useRef(false); // Use a ref to track if recording has been stopped
 
     // Web Speech API - Speech Recognition setup
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = true; // To keep recognizing even during pauses
+    recognition.continuous = true; // To keep recognizing during pauses
     recognition.interimResults = true; // To show partial results
     recognition.lang = 'en-US'; // Set language to English
-
     // Function to start and stop recording and recognize speech
-    const toggleRecording = async () => {
+    const toggleRecording = async (b) => {
         if (isRecording) {
             setIsRecording(false);
-            mediaRecorderRef.current.stop();
+            mediaRecorderRef?.current?.stop();
             recognition.stop(); // Stop recognition when recording stops
-            let messageArr = messageList;
-            if (transcript === '') {
-                messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
-            } else {
-                messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
+            if (mediaRecorderRef.current.stream) {
+                mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             }
-            setMessageList([...messageArr]);
-            setTranscript(''); // Clear transcript after processing
+            // let messageArr = messageList;
+            // if (transcript === '') {
+            //     messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
+            // } else {
+            //     messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
+            // }
+            // setMessageList([...messageArr]);
+            // setTranscript('');
+            // isStoppedRef.current = true; // Set ref to true when stopped
+            stopRecording();
+
         } else {
             setTranscript('');
+            isStoppedRef.current = false; // Reset the ref when starting a new recording
             try {
                 setIsRecording(true);
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -52,9 +60,20 @@ const ChatBot = ({ onTaskAdded }) => {
                     setAudioBlob(audioBlob);
                     await submitAudio(audioBlob); // Upload after stopping
                 };
-
                 mediaRecorderRef.current.start();
                 recognition.start(); // Start recognizing speech
+                recognition.onresult = (event) => {
+                    const speechToText = Array.from(event.results)
+                        .map((result) => result[0].transcript)
+                        .join('');
+                    setTranscript(speechToText);
+                    // Clear and reset silence timeout when speech is detected
+                    clearTimeout(silenceTimeout);
+                    silenceTimeout = setTimeout(() => {
+                        stopRecording(speechToText);
+                        // Stop recording after 3 seconds of silence
+                    }, 3000); // 3-second timeout
+                };
                 setIsRecording(true);
             } catch (err) {
                 console.error('Error accessing microphone:', err);
@@ -66,14 +85,38 @@ const ChatBot = ({ onTaskAdded }) => {
         }
     };
 
-    // Function to handle the recognized speech in real-time
-    recognition.onresult = (event) => {
-        const speechToText = Array.from(event.results)
-            .map((result) => result[0].transcript)
-            .join('');
-        setTranscript(speechToText); // Show real-time speech recognition
-    };
 
+
+    const stopRecording = (speechToText) => {
+        if (mediaRecorderRef.current.stream) {
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+        mediaRecorderRef.current?.stop();
+        recognition.stop();
+        setIsRecording(false);
+        if (!isStoppedRef.current) {
+            let messageArr = messageList;
+            if (transcript === '' && !speechToText) {
+                messageArr.push({ 'message': 'Audio captured', 'user': true, 'audio': true });
+            } else {
+                if (speechToText ) {
+                    messageArr.push({ 'message': speechToText, 'user': true, 'audio': true });
+                }
+                else {
+                    messageArr.push({ 'message': transcript, 'user': true, 'audio': true });
+                }
+            }
+            setMessageList([...messageArr]);
+            isStoppedRef.current = true; // Update the ref to indicate the recording is stopped
+        }
+    };
+    // recognition.onend = () => {
+    //     // If recognition ends (e.g., user stopped talking), start a timeout to stop recording
+    //     clearTimeout(silenceTimeout);
+    //     silenceTimeout = setTimeout(() => {
+    //         stopRecording(); // Stop recording after 3 seconds of silence when recognition ends
+    //     }, 3000); // 3-second timeout
+    // };
     const submitAudio = async (audioBlob) => {
         if (!audioBlob || audioBlob.size <= 44) {
             setMessage('No audio recorded or audio is too small. Please try again.');
@@ -159,6 +202,11 @@ const ChatBot = ({ onTaskAdded }) => {
     const handleNo = () => {
         let messageArr = messageList;
         messageArr.push({ 'message': 'No', 'user': true });
+        setLoading(true);
+        setTimeout(() => {
+            messageArr.push({ 'message': 'Okay!😊 You can try again or come back anytime. Take care! 👋' });
+            setLoading(false);
+        }, 2000);
         setMessageList(messageArr);
         setConfirmation(null);
     };
@@ -193,20 +241,41 @@ const ChatBot = ({ onTaskAdded }) => {
 
             if (response.ok) {
                 const result = await response.json();
-                setMessage(`Task ${action_type}d successfully: ${result.message}`);
+                setMessage(`Task ${action_type}d successfully : ${result.message}`);
                 let messageArr = messageList;
                 if (action_type === 'Add') {
-                    messageArr.push({ 'message': `Task ${action_type}ed successfully` });
-                    setTimeout(()=>{onTaskAdded({ title, reminder_time })},2500);
-                } else {
-                    messageArr.push({ 'message': `Task ${action_type}d successfully` });
+                    setLoading(true);
+                    setTimeout(() => {
+                        onTaskAdded({ title, reminder_time })
+                        messageArr.push({ 'message': "Task added successfully! ✅ You're all set!" });
+                        setLoading(false);
+                    }, 2000);
                 }
+                else if (action_type.toLowerCase() === 'delete') {
+                    setLoading(true);
+                    setTimeout(() => {
+                        messageArr.push({ 'message': "Task deleted successfully! 🗑️ It's gone." });
+                        setLoading(false);
+                    }, 2000);
+                }
+                else {
+                    setLoading(true);
+                    setTimeout(() => {
+                        messageArr.push({ 'message': "Task updated successfully! ✅ Changes saved." });
+                        setLoading(false);
+                    }, 2000);
+                }
+
                 setMessageList(messageArr);
             } else {
                 const errorText = await response.text();
                 setMessage(`I couldn't ${action_type.toLowerCase()} the task: ${errorText}`);
                 let messageArr = messageList;
-                messageArr.push({ 'message': `Sorry, I couldn't ${action_type.toLowerCase()} the task :(` });
+                setLoading(true);
+                setTimeout(() => {
+                    messageArr.push({ 'message': `Sorry, I couldn't ${action_type.toLowerCase()} the task 😔` });
+                    setLoading(false);
+                }, 2000);
                 setMessageList(messageArr);
             }
         } catch (error) {
@@ -220,24 +289,22 @@ const ChatBot = ({ onTaskAdded }) => {
 
     // Scroll to the bottom when messageList changes
     useEffect(() => {
-        console.log("1");
         if (endOfMessagesRef.current) {
-            console.log("hey")
             endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [isRecording,messageList.length,transcript,confirmation,loading,message]);
+    }, [isRecording, messageList.length, transcript, confirmation, loading, message]);
 
     return (
         <div className="chatbot-container">
-            <div className="chatbox" >
-                {messageList.length === 0 && transcript === '' ? <p style={{ margin: "50% 0% 20% 23%", color: "#8B8378" }}>Add/Reschedule/Delete an event</p> : <></>}
+            <div className="chatbox">
+                {messageList.length === 0 && transcript === '' ? <p style={{ margin: "50% 0% 20% 23%", color: "#8B8378" }}>Add/Reschedule/Delete an event</p> : null}
                 {messageList.map((msg, index) => (
-                    <div key={index} className={`message ${msg.user ? msg.audio && msg.message === "Audio captured" ? 'user-message audio-message ' : 'user-message' : 'system-message'}`}>
+                    <div key={index} className={`message ${msg.user ? msg.audio && msg.message === "Audio captured" ? 'user-message audio-message' : 'user-message' : 'system-message'}`}>
                         {msg.message}
                     </div>
                 ))}
-                {transcript && isRecording && ( // Display recognized speech in real-time
-                    <p className="message user-message"> {transcript}</p>
+                {transcript && isRecording && (
+                    <p className="message user-message">{transcript}</p>
                 )}
                 {loading && (
                     <div className="message system-message">
@@ -253,7 +320,7 @@ const ChatBot = ({ onTaskAdded }) => {
                 <div ref={endOfMessagesRef} /> {/* This div will act as a scroll target */}
             </div>
 
-            <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null ? { pointerEvents: "none", background: "lightgray" } : {}} onClick={toggleRecording} >
+            <button className={`record-btn ${isRecording ? 'recording' : ''}`} style={confirmation !== null || loading ? { pointerEvents: "none", background: "lightgray" } : {}} onClick={() => toggleRecording(isRecording)} >
                 <FontAwesomeIcon icon={faMicrophone} />
             </button>
         </div>
@@ -261,3 +328,5 @@ const ChatBot = ({ onTaskAdded }) => {
 };
 
 export default ChatBot;
+
+
