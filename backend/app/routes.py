@@ -278,31 +278,27 @@ def create_task_from_speech():
     # Check if an audio file is provided in the request
     if 'audio' not in request.files:
         return jsonify({"error": "Audio file not provided"}), 400
-    
+
     audio_file = request.files['audio']
 
     # Convert speech to text
     original_file_path = 'uploaded_audio.wav'
     converted_file_path = 'converted_audio.wav'
+    
+    # Handle audio file conversion
     try:
         if os.path.exists(original_file_path):
             os.remove(original_file_path)
-
         if os.path.exists(converted_file_path):
             os.remove(converted_file_path)
-    except Exception as e:
-        print(f"Error deleting previous files: {str(e)}")
-
-    # Save the uploaded file
-    audio_file.save(original_file_path)
-
-    # Convert the uploaded file to PCM WAV format using FFmpeg
-    try:
+        
+        # Save and convert audio
+        audio_file.save(original_file_path)
         subprocess.run(['ffmpeg', '-i', original_file_path, '-acodec', 'pcm_s16le', '-ar', '16000', converted_file_path], check=True)
     except subprocess.CalledProcessError as e:
         return jsonify({"error": f"Failed to convert audio file: {str(e)}"}), 500
 
-    # Process the converted audio file with speech_recognition
+    # Recognize speech from the converted file
     try:
         with sr.AudioFile(converted_file_path) as source:
             audio_data = recognizer.record(source)
@@ -310,13 +306,21 @@ def create_task_from_speech():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-    # Use the LLM to extract task details
-    task_details = process_speech_to_task(speech_text)
+    # Get the user's ID from the token
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"message": "Token is missing!"}), 403
+
+    user_id = decode_token(token.split(" ")[1])
+    if user_id is None:
+        return jsonify({"message": "Token is invalid!"}), 403
+
+    # Use the LLM to extract task details with context of user's existing tasks
+    task_details = process_speech_to_task(speech_text, user_id)
 
     if not task_details['title'] and task_details['action_type'] != 'delete':
         return jsonify({"error": "Could not extract task title"}), 400
 
-    # Prepare the confirmation response
     confirmation_message = {
         "action_type": task_details['action_type'],
         "title": task_details['title'],

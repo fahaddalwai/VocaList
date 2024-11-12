@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import '../Styles/Chatbot.css'; // Assuming you have a CSS file for chatbot styling
-
+/* eslint-disable no-unused-expressions */
 const ChatBot = ({ onTaskAdded }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [audioBlob, setAudioBlob] = useState(null);
@@ -330,3 +330,4 @@ const ChatBot = ({ onTaskAdded }) => {
 export default ChatBot;
 
 
+/* eslint-enable no-unused-expressions */
