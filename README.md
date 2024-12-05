@@ -1,6 +1,4 @@
-Here’s the entire README in proper **Markdown** format:
 
-```markdown
 # VocaList: Speech-Controlled To-Do List
 
 **VocaList** is a voice-activated task management application designed to streamline task creation, updates, and deletions using natural language commands. This README provides detailed instructions on setting up and running the backend and frontend, including database configuration and dependencies.
@@ -221,4 +219,4 @@ nui-todo-llm/
 ---
 
 Feel free to reach out for support or additional documentation needs!
-```
+
